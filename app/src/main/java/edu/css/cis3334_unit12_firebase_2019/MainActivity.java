@@ -11,6 +11,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.*;
@@ -20,6 +25,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int RC_SIGN_IN = 0;
     private TextView textViewStatus;
     private EditText editTextEmail;
     private EditText editTextPassword;
@@ -29,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonSignOut;
     private Button buttonStartChat;
     private FirebaseAuth mAuth;
+    GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +43,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
+
+        // Configure sign-in to request the user's ID, email address, and basic
+        // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        // Build a GoogleSignInClient with the options specified by gso.
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         textViewStatus = (TextView) findViewById(R.id.textViewStatus);
         editTextEmail = (EditText) findViewById(R.id.editTextEmail);
@@ -48,35 +63,35 @@ public class MainActivity extends AppCompatActivity {
 
         buttonLogin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("CIS3334", "normal login ");
+                //Log.d("CIS3334", "normal login ");
                 signIn(editTextEmail.getText().toString(), editTextPassword.getText().toString());
             }
         });
 
         buttonCreateLogin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("CIS3334", "Create Account ");
+                //Log.d("CIS3334", "Create Account ");
                 createAccount(editTextEmail.getText().toString(), editTextPassword.getText().toString());
             }
         });
 
         buttonGoogleLogin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("CIS3334", "Google login ");
+                //Log.d("CIS3334", "Google login ");
                 googleSignIn();
             }
         });
 
         buttonSignOut.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("CIS3334", "Logging out - signOut ");
+                //Log.d("CIS3334", "Logging out - signOut ");
                 signOut();
             }
         });
 
         buttonStartChat.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("CIS3334", "Starting Chat Intent ");
+                //Log.d("CIS3334", "Starting Chat Intent ");
                 Intent intent = new Intent(MainActivity.this, ChatActivity.class);
                 startActivity(intent);
 
@@ -93,8 +108,20 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser != null) {
             textViewStatus.setText(currentUser.toString());
         }
+
+        // Check for existing Google Sign In account, if the user is already signed in
+        // the GoogleSignInAccount will be non-null.
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (currentUser != null) {
+            textViewStatus.setText(account.toString());
+        }
     }
 
+    /*
+    *Creates an account for authentication in Firebase
+    * @param    email       user's email address
+    * @param    password    user's password
+     */
     private void createAccount(String email, String password)
     {
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -103,14 +130,14 @@ public class MainActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
-                            Log.d("CIS3334", "createUserWithEmail:success");
+                            //Log.d("CIS3334", "createUserWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             textViewStatus.setText(user.toString());
                         } else {
                             // If sign in fails, display a message to the user.
-                            Log.w("CIS3334", "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(MainActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                            //Log.w("CIS3334", "createUserWithEmail:failure", task.getException());
+                            //Toast.makeText(MainActivity.this, "Authentication failed.",
+                                    //Toast.LENGTH_SHORT).show();
                             textViewStatus.setText(null);
                         }
 
@@ -122,6 +149,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /*
+     *Signs a user into connected Firebase
+     * @param   email       user email address for sign in
+     * @param   password    user password for sign in
+     */
     private void signIn(String email, String password){
 
         mAuth.signInWithEmailAndPassword(email, password)
@@ -130,14 +162,14 @@ public class MainActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
-                            Log.d("CIS3334", "signInWithEmail:success");
+                            //Log.d("CIS3334", "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             textViewStatus.setText(user.toString());
                         } else {
                             // If sign in fails, display a message to the user.
-                            Log.w("CIS3334", "signInWithEmail:failure", task.getException());
-                            Toast.makeText(MainActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                            //Log.w("CIS3334", "signInWithEmail:failure", task.getException());
+                            //Toast.makeText(MainActivity.this, "Authentication failed.",
+                                    //Toast.LENGTH_SHORT).show();
                             textViewStatus.setText(null);
                         }
 
@@ -148,6 +180,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /*
+     *Signs out current user
+     */
     private void signOut () {
 
         mAuth.signOut();
@@ -155,13 +190,43 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /*
+     *Signs in a user and authenticates using Google sign in
+     */
     private void googleSignIn() {
 
-
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
         //Toast.makeText(getApplicationContext(), "Google SignIn not implemented yet !!! ", Toast.LENGTH_LONG).show();
 
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            textViewStatus.setText(task.toString());
+        }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+            textViewStatus.setText(account.toString());
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            //Log.w("CIS3334", "signInResult:failed code=" + e.getStatusCode());
+            textViewStatus.setText(null);
+        }
+    }
 
 
 }
